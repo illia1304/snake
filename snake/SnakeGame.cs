@@ -6,6 +6,7 @@ class SnakeGame
     private bool isGameOver;
     private Apple apple;
     private AppleGenerator appleGenerator;
+    private bool isGameSave;
 
     public SnakeGame()
     {
@@ -13,6 +14,7 @@ class SnakeGame
         isGameOver = false;
         appleGenerator = new AppleGenerator();
         apple = appleGenerator.GenerateApple();
+        isGameSave = false;
     }
 
     public void Run()
@@ -34,6 +36,12 @@ class SnakeGame
                 MoveSnake();
                 DrawGame();
             }
+            else
+            {
+                SaveGame();
+            }
+            LoadGame();
+
         }
 
         Console.CursorVisible = true;
@@ -73,6 +81,25 @@ class SnakeGame
             snake.IncreaseLength();
             apple = appleGenerator.GenerateApple();
         }
+        else
+        {
+            for (int i = 0; i < snake.Body.Count - 1; i++)
+            {
+                if (snake.Body[i] == snake.Body.Last())
+                {
+                    isGameOver = true;
+                    isGameSave = true;
+                    SaveGame();
+                }
+                if (snake.Body[i].X < 0 || snake.Body[i].X >= Console.WindowWidth ||
+                    snake.Body[i].Y < 0 || snake.Body[i].Y >= Console.WindowHeight)
+                {
+                    isGameOver = true;
+                    SaveGame();
+                    isGameSave = true;
+                }
+            }
+        }
     }
 
     private void DrawGame()
@@ -96,7 +123,55 @@ class SnakeGame
         Console.SetCursorPosition(apple.Location.X, apple.Location.Y);
         Console.Write("0");
     }
+
+
+    public record GameState
+    {
+        public int SnakeLength;
+        public List<Point> Body;
+        public Point AppleLocation;
+        public Direction SnakeDirection;
+    }
+    public void SaveGame()
+    {
+        File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "isGameSave.txt"), isGameSave.ToString());
+
+        GameState gameState = new GameState
+        {
+            SnakeLength = snake.Body.Count,
+            Body = snake.Body,
+            AppleLocation = apple.Location,
+        };
+
+        string convert = Newtonsoft.Json.JsonConvert.SerializeObject(gameState, Newtonsoft.Json.Formatting.Indented);
+        isGameSave = true;
+
+        if (!File.Exists("isGameSave.txt"))
+        {
+            isGameSave = false;
+        }
+
+
+        File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "game.json"), convert);
+    }
+    public void LoadGame()
+    {
+        if (File.Exists("game.json"))
+        {
+            string savedGame = File.ReadAllText("game.json");
+            GameState gameState = Newtonsoft.Json.JsonConvert.DeserializeObject<GameState>(savedGame);
+            snake = new Snake(gameState.Body.Last(), gameState.SnakeLength);
+            apple = new Apple(gameState.AppleLocation);
+
+            snakeDirection = gameState.SnakeDirection;
+        }
+    }
+
+
 }
+
+
+
 
 enum Direction
 {
