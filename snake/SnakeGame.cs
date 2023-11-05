@@ -31,26 +31,32 @@ class SnakeGame
             else
                 HandleKeyPress(key);
 
-            if (!isGameOver)
-            {
-                MoveSnake();
-                DrawGame();
-            }
-            else
-            {
-                SaveGame();
-            }
-            LoadGame();
-
+            MoveSnake();
+            DrawGame();
         }
 
         Console.CursorVisible = true;
+
+        if (isGameOver)
+        {
+            DrawGameOverScreen();
+            SaveGame("D:\\Code\\snake\\snake\\gameState.json");
+        }
     }
 
     private Direction snakeDirection = Direction.Right;
 
     private void HandleKeyPress(ConsoleKey key)
     {
+        snakeDirection = key switch
+        {
+            ConsoleKey.LeftArrow when snakeDirection != Direction.Right => Direction.Left,
+            ConsoleKey.RightArrow => Direction.Right,
+            ConsoleKey.UpArrow => Direction.Up,
+            ConsoleKey.DownArrow => Direction.Down,
+            _ => snakeDirection,
+        };
+
         switch (key)
         {
             case ConsoleKey.LeftArrow:
@@ -83,20 +89,18 @@ class SnakeGame
         }
         else
         {
+            if (snake.Body.Last().X < 0 || snake.Body.Last().X >= Console.WindowWidth ||
+            snake.Body.Last().Y < 0 || snake.Body.Last().Y >= Console.WindowHeight)
+            {
+                isGameOver = true;
+            }
+
             for (int i = 0; i < snake.Body.Count - 1; i++)
             {
                 if (snake.Body[i] == snake.Body.Last())
                 {
                     isGameOver = true;
-                    isGameSave = true;
-                    SaveGame();
-                }
-                if (snake.Body[i].X < 0 || snake.Body[i].X >= Console.WindowWidth ||
-                    snake.Body[i].Y < 0 || snake.Body[i].Y >= Console.WindowHeight)
-                {
-                    isGameOver = true;
-                    SaveGame();
-                    isGameSave = true;
+                    break;
                 }
             }
         }
@@ -132,10 +136,9 @@ class SnakeGame
         public Point AppleLocation;
         public Direction SnakeDirection;
     }
-    public void SaveGame()
-    {
-        File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "isGameSave.txt"), isGameSave.ToString());
 
+    public void SaveGame(string filepath)
+    {
         GameState gameState = new GameState
         {
             SnakeLength = snake.Body.Count,
@@ -144,29 +147,35 @@ class SnakeGame
         };
 
         string convert = Newtonsoft.Json.JsonConvert.SerializeObject(gameState, Newtonsoft.Json.Formatting.Indented);
-        isGameSave = true;
-
-        if (!File.Exists("isGameSave.txt"))
-        {
-            isGameSave = false;
-        }
-
-
-        File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "game.json"), convert);
+        File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), filepath), convert);
     }
-    public void LoadGame()
+
+    public static SnakeGame LoadGame(string filepath)
     {
-        if (File.Exists("game.json"))
+        if (!File.Exists(filepath))
         {
-            string savedGame = File.ReadAllText("game.json");
-            GameState gameState = Newtonsoft.Json.JsonConvert.DeserializeObject<GameState>(savedGame);
-            snake = new Snake(gameState.Body.Last(), gameState.SnakeLength);
-            apple = new Apple(gameState.AppleLocation);
-
-            snakeDirection = gameState.SnakeDirection;
+            throw new FileNotFoundException(filepath);
         }
+
+        string savedGame = File.ReadAllText(filepath);
+        GameState gameState = Newtonsoft.Json.JsonConvert.DeserializeObject<GameState>(savedGame);
+        SnakeGame game = new SnakeGame();
+
+        game.snake = new Snake(gameState.Body.Last(), gameState.SnakeLength);
+        game.apple = new Apple(gameState.AppleLocation);
+
+        game.snakeDirection = gameState.SnakeDirection;
+
+        return game;
     }
 
+
+    private void DrawGameOverScreen()
+    {
+        Console.Clear();
+        Console.SetCursorPosition(Console.WindowWidth / 2 - 5, Console.WindowHeight / 2 - 1);
+        Console.WriteLine("GAME OVER");
+    }
 
 }
 
