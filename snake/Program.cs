@@ -8,13 +8,13 @@ class Program
 {
     static void Main()
     {
-        string filePath = "D:\\Code\\snake\\snake\\gameState.json";
+        string filePath = "\\gameState.json"; ;
         // if no saved games - create new
-        var snakeGame = File.Exists(filePath) ? SnakeGame.LoadGame("D:\\Code\\snake\\snake\\gameState.json") : new SnakeGame();
+        var snakeGame = File.Exists(filePath) ? SnakeGame.LoadGame(filePath) : new SnakeGame();
         
         snakeGame.Run();
 
-        snakeGame.SaveGame("D:\\Code\\snake\\snake\\gameState.json");
+        snakeGame.SaveGame(filePath);
     }
 }
 

@@ -152,6 +152,7 @@ class SnakeGame
 
     public static SnakeGame LoadGame(string filepath)
     {
+
         if (!File.Exists(filepath))
         {
             throw new FileNotFoundException(filepath);
