@@ -183,7 +183,7 @@ class SnakeGame
 
 
 
-enum Direction
+public enum Direction
 {
     Left,
     Up,
